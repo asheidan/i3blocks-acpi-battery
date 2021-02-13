@@ -71,8 +71,14 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv) 
 	fprintf(stdout, "current: %ld\n", current_now);
 	*/
 
-	long charge_remaining;
 	char status = battery_status("BATC/status");
+	long charge_percent = (charge_now * 100) / charge_full;
+
+	fprintf(stdout, " %s %3ld%% ",
+			status == 'D' ? "BAT" : "CHR",
+			charge_percent);
+
+	long charge_remaining;
 	if ('D' == status) {
 		/* status is "Discharging" */
 		charge_remaining = charge_now;
@@ -80,24 +86,24 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv) 
 	else {
    		charge_remaining = charge_full - charge_now;
 	}
-	int hours = charge_remaining / current_now;
-	charge_remaining = (charge_remaining % current_now) * 60;
-	int minutes = charge_remaining / current_now;
-	/* Add an extra minute if theres more than 30 seconds left and we're charging */
-	if ('C' == status) {
-		minutes += (charge_remaining % current_now) * 60 / current_now > 30;
+
+	if (0 < charge_remaining) {
+		int hours = charge_remaining / current_now;
+		charge_remaining = (charge_remaining % current_now) * 60;
+		int minutes = charge_remaining / current_now;
+		/* Add an extra minute if theres more than 30 seconds left and we're charging */
+		if ('C' == status) {
+			minutes += (charge_remaining % current_now) * 60 / current_now > 30;
+		}
+		/*
+		charge_remaining = (charge_remaining % current_now) * 60;
+		int seconds = charge_remaining / current_now;
+		*/
+
+		fprintf(stdout, "%d:%02d ", hours, minutes);
 	}
-	/*
-	charge_remaining = (charge_remaining % current_now) * 60;
-	int seconds = charge_remaining / current_now;
-	*/
 
+	putc('\n', stdout);
 
-
-	fprintf(stdout, "%s %3ld%% %d:%02d\n",
-			status == 'D' ? "BAT" : "CHR",
-			(charge_now * 100) / charge_full, hours, minutes);
-
-
-	return 0;
+	return ((charge_percent < 20) && ('D' == status)) ? 33 : 0;
 }
