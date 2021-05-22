@@ -74,9 +74,20 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv) 
 	char status = battery_status("BATC/status");
 	long charge_percent = (charge_now * 100) / charge_full;
 
-	fprintf(stdout, " %s %3ld%% ",
-			status == 'D' ? "BAT" : "CHR",
-			charge_percent);
+	char *status_word = "???";
+	switch (status) {
+		case 'D':
+			status_word = "BAT";
+			break;
+		case 'C':
+			status_word = "CHR";
+			break;
+		case 'N':
+			status_word = "Not";
+			break;
+	}
+
+	fprintf(stdout, " %s %3ld%% ", status_word, charge_percent);
 
 	long charge_remaining;
 	if ('D' == status) {
@@ -87,7 +98,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv) 
    		charge_remaining = charge_full - charge_now;
 	}
 
-	if (0 < charge_remaining) {
+	if ('N' != status && 0 < charge_remaining) {
 		int hours = charge_remaining / current_now;
 		charge_remaining = (charge_remaining % current_now) * 60;
 		int minutes = charge_remaining / current_now;
@@ -101,6 +112,9 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv) 
 		*/
 
 		fprintf(stdout, "%d:%02d ", hours, minutes);
+	}
+	else {
+		fprintf(stdout, "-:-- ");
 	}
 
 	putc('\n', stdout);
